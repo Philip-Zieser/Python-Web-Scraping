@@ -1,37 +1,70 @@
-## Welcome to GitHub Pages
+## Scraping a table from Wikipedia using Python
 
-You can use the [editor on GitHub](https://github.com/Philip-Zieser/Python-Web-Scraping/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+We are going to take a look at how to extract data from a table on a wikipedia page. First, lets take a look at the website we would like to scrape the data from. [We will use this page](https://en.wikipedia.org/wiki/List_of_largest_law_firms_by_profits_per_partner).
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+### Step 1  -- Import Modules
 
-### Markdown
-
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+We will need to use the following modules to complete our web-scraping:
 
 ```markdown
-Syntax highlighted code block
 
-# Header 1
-## Header 2
-### Header 3
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
 
-- Bulleted
-- List
+```
+### Step 2 -- Save URL into a variable:
 
-1. Numbered
-2. List
+Simply copy and paste the URL into a variable, here we name the variable "URL". This will make it easier to refer to our website in our code.
 
-**Bold** and _Italic_ and `Code` text
+```markdown
 
-[Link](url) and ![Image](src)
+URL='https://en.wikipedia.org/wiki/List_of_largest_law_firms_by_profits_per_partner'
+
+```
+### Step 3 -- Create a function to extract the data from wikipediua into a Pandas DataFrame:
+
+```markdown
+
+def get_table(URL, n=0):        #use n to get which table you want (0 is the default and will be the first table)
+    return pd.DataFrame([[cell.text for cell in row.find_all(["th","td"])]
+        for row in BeautifulSoup(requests.get(URL).content, 'html.parser').find_all("table")[(n)].find_all("tr")])
+
 ```
 
-For more details see [Basic writing and formatting syntax](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
+## Step 4 -- Create a function to format the resulting DataFrame
 
-### Jekyll Themes
+When the data is first extracted, the output will not be formatted correctly, so we need to write a code to automatically format the table:
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/Philip-Zieser/Python-Web-Scraping/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+```markdown
 
-### Support or Contact
+def Format(df):
+    df.set_axis([x.rstrip() for x in df.iloc[0]], axis=1, inplace=True)
+    df.drop(0, inplace=True)
+    df.reset_index(inplace=True)
+    df.drop(['index'], axis=1, inplace=True)
+    return df
 
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+```
+
+The webpage can be extracted by using both of these fucntions together:
+
+```markdown
+
+Format(get_table(URL))
+
+```
+
+This code will work to extract any page on wikipedia, for example lets look at [this page](https://en.wikipedia.org/wiki/Economy_of_the_United_States?msclkid=3d62c767ae4111ecb1c6599eb44d5376#Data). If we look at the data section on this page, we see a chart showing economic data for the US. Let's extract the data from this table:
+
+```markdown
+
+URL='https://en.wikipedia.org/wiki/Economy_of_the_United_States?msclkid=3d62c767ae4111ecb1c6599eb44d5376#Data'
+
+Format(get_table(URL,3))    #we use three because this is the third table on the wikipedia page.
+
+```
+
+Go try it yourself!
+
+
